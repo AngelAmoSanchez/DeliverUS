@@ -103,21 +103,21 @@ const indexCustomer = async function (req, res) {
           as: 'restaurant',
           attributes: { exclude: ['createdAt', 'updatedAt'] }
         }],
-      order: [['createdAt', 'DESC']]  
+      order: [['createdAt', 'DESC']]
     })
 
-    for(const order of orders) {
+    for (const order of orders) {
       const productsOrder = []
-      for(const product of order.products) {
-        if(product.OrderProducts.orderId === order.id){
+      for (const product of order.products) {
+        if (product.OrderProducts.orderId === order.id) {
           productsOrder.push(product)
         }
-      order.products = [...productsOrder]
-     }
+        order.products = [...productsOrder]
+      }
     }
     res.json(orders)
   } catch (err) {
-      res.status(500).send(err)
+    res.status(500).send(err)
   }
 }
 
@@ -128,11 +128,6 @@ const indexCustomer = async function (req, res) {
 // 3. In order to save the order and related products, start a transaction, store the order, store each product linea and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
 
-<<<<<<< HEAD
-// 1. If price > 10€, shipping costs = 0
-// 2. If price <= 10€,  shipping costs =  restaurant.shippingCosts | price += shipping costs
-
-=======
 const _getProductLinesWithPrices = async (productLines) => {
   const products = Product.findAll({ where: { id: productLines.map(pl => pl.productId) } })
   const productLinesCopy = [...productLines]
@@ -168,7 +163,6 @@ const _getOrderWithShippingCostsAndPrice = async (order, productLinesWithPrices)
   order.price = orderProductsPrice + order.shippingCosts
   return order
 }
->>>>>>> 96395a9876d854303c5e077a685a40913386243d
 const create = async (req, res) => {
   let newOrder = Order.build(req.body)
   newOrder.userId = req.user.id
