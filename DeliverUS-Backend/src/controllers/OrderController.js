@@ -88,7 +88,37 @@ const indexRestaurant = async function (req, res) {
 // Orders have to include products that belongs to each order and restaurant details
 // sort them by createdAt date, desc.
 const indexCustomer = async function (req, res) {
-  res.status(500).send('This function is to be implemented')
+  try {
+    const orders = await Order.findAll({
+      where: {
+        userId: req.params.userId
+      },
+      include: [
+        {
+          model: Product,
+          as: 'products'
+        },
+        {
+          model: Restaurant,
+          as: 'restaurant',
+          attributes: { exclude: ['createdAt', 'updatedAt'] }
+        }],
+      order: [['createdAt', 'DESC']]  
+    })
+
+    for(const order of orders) {
+      const productsOrder = []
+      for(const product of order.products) {
+        if(product.OrderProducts.orderId === order.id){
+          productsOrder.push(product)
+        }
+      order.products = [...productsOrder]
+     }
+    }
+    res.json(orders)
+  } catch (err) {
+      res.status(500).send(err)
+  }
 }
 
 // TODO: Implement the create function that receives a new order and stores it in the database.
@@ -97,6 +127,9 @@ const indexCustomer = async function (req, res) {
 // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
 // 3. In order to save the order and related products, start a transaction, store the order, store each product linea and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
+
+// 1. If price > 10€, shipping costs = 0
+// 2. If price <= 10€,  shipping costs =  restaurant.shippingCosts | price += shipping costs
 
 const create = async (req, res) => {
   // Use sequelizeSession to start a transaction
