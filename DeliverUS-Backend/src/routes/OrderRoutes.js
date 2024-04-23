@@ -33,6 +33,7 @@ const loadFileRoutes = function (app) {
       OrderMiddleware.checkOrderOwnership,
       OrderMiddleware.checkOrderIsPending,
       OrderController.confirm)
+
   app.route('/orders/:orderId/send')
     .patch(
       isLoggedIn,
@@ -69,12 +70,14 @@ const loadFileRoutes = function (app) {
       isLoggedIn,
       hasRole('customer'),
       checkEntityExists(Order, 'orderId'),
+      // OrderMiddleware.checkOrderOwnership,
       OrderMiddleware.checkOrderCustomer,
       OrderController.destroy) // Miarar si hay delete en los controllers que han hecho
 
   app.route('/orders/:orderId')
     .get(
       isLoggedIn,
+      hasRole('customer'),
       checkEntityExists(Order, 'orderId'),
       OrderMiddleware.checkOrderVisible,
       OrderController.show)

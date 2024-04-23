@@ -16,26 +16,13 @@ const checkOrderCustomer = async (req, res, next) => {
 
 // TODO: Implement the following function to check if the restaurant of the order exists
 const checkRestaurantExists = async (req, res, next) => {
-<<<<<<< HEAD
-    try {
-      const order = await Order.findByPk(req.params.orderId)
-      if (!order.restaurantId) { return res.status(404).send('Not found') }
-      return next()
-    } catch (err) {
-      return res.status(500).send(err)
-    }
-=======
   try {
-    const order = await Order.findByPk(req.params.orderId) // Si no va se puede realizar con un where
-    if (order.restaurantId === req.params.restaurantId) {
-      return next()
-    } else {
-      return res.status(404).send('The restaurant of the order does not exist')
-    }
+    const order = await Order.findByPk(req.params.orderId)
+    if (!order.restaurantId) { return res.status(404).send('Not found') }
+    return next()
   } catch (err) {
-    return res.status(500).send(err.message)
+    return res.status(500).send(err)
   }
->>>>>>> 96395a9876d854303c5e077a685a40913386243d
 }
 
 const checkOrderOwnership = async (req, res, next) => {

@@ -2,6 +2,7 @@
 import { Order, Product, Restaurant, User, sequelizeSession } from '../models/models.js'
 import moment from 'moment'
 import { Op } from 'sequelize'
+
 const generateFilterWhereClauses = function (req) {
   const filterWhereClauses = []
   if (req.query.status) {
@@ -90,6 +91,29 @@ const indexRestaurant = async function (req, res) {
 const indexCustomer = async function (req, res) {
   try {
     const orders = await Order.findAll({
+      where: { userId: req.user.id },
+      include: [{
+        model: Restaurant,
+        as: 'restaurant',
+        attributes: ['id', 'name', 'description', 'address', 'postalCode', 'url', 'shippingCosts', 'averageServiceMinutes', 'email', 'phone', 'logo', 'heroImage', 'status', 'restaurantCategoryId']
+      },
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'email', 'avatar', 'userType']
+      },
+      {
+        model: Product,
+        as: 'products'
+      }],
+      order: [
+        ['createdAt', 'DESC']
+      ]
+    })
+
+    /*
+    try {
+    const orders = await Order.findAll({
       where: {
         userId: req.params.userId
       },
@@ -105,6 +129,7 @@ const indexCustomer = async function (req, res) {
         }],
       order: [['createdAt', 'DESC']]
     })
+    */
 
     for (const order of orders) {
       const productsOrder = []
@@ -163,6 +188,7 @@ const _getOrderWithShippingCostsAndPrice = async (order, productLinesWithPrices)
   order.price = orderProductsPrice + order.shippingCosts
   return order
 }
+
 const create = async (req, res) => {
   let newOrder = Order.build(req.body)
   newOrder.userId = req.user.id
