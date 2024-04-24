@@ -1,20 +1,20 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
+import { AuthorizationContext } from '../../context/AuthorizationContext'
 import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'react-native'
 import { showMessage } from 'react-native-flash-message'
-import { getDetail } from '../../api/RestaurantEndpoints'
+import { getRestaurantDetail } from '../../api/RestaurantEndpoints'
+import { update, getOrderDetail } from '../../api/OrderEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextRegular from '../../components/TextRegular'
 import TextSemiBold from '../../components/TextSemibold'
 import * as GlobalStyles from '../../styles/GlobalStyles'
 import defaultProductImage from '../../../assets/product.jpeg'
-import { AuthorizationContext } from '../../context/AuthorizationContext'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { create } from '../../api/OrderEndpoints'
+import { MaterialCommunityIcons, AntDesign } from '@expo/vector-icons'
 import ConfirmOrderModal from '../../components/ConfirmOrderModal'
-import DismissOrderModal from '../../components/DismissOrderModal'
+import CancelEditModal from '../../components/CancelEditModal'
 
-export default function RestaurantDetailScreen ({ navigation, route }) {
+export default function EditOrderScreen ({ navigation, route }) {
   const { loggedInUser } = useContext(AuthorizationContext)
   const [restaurant, setRestaurant] = useState({})
   const [backendErrors, setBackendErrors] = useState()
@@ -22,37 +22,13 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
   const [productQuantity, setProductQuantity] = useState(new Map())
   const [orderToBeConfirmed, setOrderToBeConfirmed] = useState(null)
   const [productsInOrder, setProducstInOrder] = useState([])
-  const [dismissOrder, setDismissOrder] = useState(false)
+  const [cancelEditOrder, setCancelEditOrder] = useState(false)
   const [address, setAddress] = useState('')
+  const [originalOrder, setOriginalOrder] = useState()
 
   useEffect(() => {
-    fetchRestaurantProductDetail()
-  }, [loggedInUser, route])
-
-  const fetchRestaurantProductDetail = async () => {
-    try {
-      const fetchedRestaurant = await getDetail(route.params.id)
-      const productos = fetchedRestaurant.products
-      setRestaurant(fetchedRestaurant)
-      setProducts(productos)
-    } catch (error) {
-      showMessage({
-        message: `There was an error while retrieving restaurant details (id ${route.params.id}). ${error}`,
-        type: 'error',
-        style: GlobalStyles.flashStyle,
-        titleStyle: GlobalStyles.flashTextStyle
-      })
-    }
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line no-prototype-builtins
-    if (restaurant.hasOwnProperty('products')) {
-      restaurant.products.forEach(element => {
-        setProductQuantity(productQuantity.set(element.id, 0))
-      })
-    }
-  }, [restaurant])
+    fetchAll()
+  }, [route, loggedInUser])
 
   useEffect(() => {
     const productsNewOrder = products.filter(p => productQuantity.get(p.id) > 0)
@@ -63,7 +39,11 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     const productQuantityReshaped = [...productQuantity].map(([productId, quantity]) => ({ productId, quantity }))
       .filter(element => element.quantity > 0)
     if (productQuantityReshaped.length > 0) {
-      const values = { address, restaurantId: route.params.id, products: productQuantityReshaped }
+      const values = {
+        address,
+        // restaurantId: route.params.id,
+        products: productQuantityReshaped
+      }
       await setOrderToBeConfirmed(values)
     } else {
       showMessage({
@@ -75,18 +55,9 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     }
   }
 
-  // Quitar el texto de las FR
   const renderHeader = () => {
     return (
       <View>
-        <View style={styles.FRHeader}>
-          <TextSemiBold>FR2: Restaurants details and menu.</TextSemiBold>
-          <TextRegular>Customers will be able to query restaurants details and the products offered by them.</TextRegular>
-          <TextSemiBold>FR3: Add, edit and remove products to a new order.</TextSemiBold>
-          <TextRegular>A customer can add several products, and several units of a product to a new order. Before confirming, customer can edit and remove products. Once the order is confirmed, it cannot be edited or removed.</TextRegular>
-          <TextSemiBold>FR4: Confirm or dismiss new order.</TextSemiBold>
-          <TextRegular>Customers will be able to confirm or dismiss the order before sending it to the backend.</TextRegular>
-        </View>
         <ImageBackground source={(restaurant?.heroImage) ? { uri: process.env.API_BASE_URL + '/' + restaurant.heroImage, cache: 'force-cache' } : undefined} style={styles.imageBackground}>
           <View style={styles.restaurantHeaderContainer}>
             <TextSemiBold textStyle={styles.textTitle}>{restaurant.name}</TextSemiBold>
@@ -95,15 +66,13 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
             <TextRegular textStyle={styles.description}>{restaurant.restaurantCategory ? restaurant.restaurantCategory.name : ''}</TextRegular>
           </View>
         </ImageBackground>
-
         <Pressable
           onPress={ () => {
             if (loggedInUser) {
-              setAddress(loggedInUser.address)
               confirmOrder()
             } else {
               showMessage({
-                message: 'You must be logged in to place an order',
+                message: 'You must be logged in to place an order ',
                 type: 'danger',
                 style: GlobalStyles.flashStyle,
                 titleStyle: GlobalStyles.flashTextStyle
@@ -120,29 +89,29 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
             styles.button
           ]}>
           <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
-            <MaterialCommunityIcons name='plus-circle' color={'white'} size={20} />
+          <MaterialCommunityIcons name='pencil' color={'white'} size={20}/>
+              <TextRegular textStyle={styles.text}>
+                Edit
+              </TextRegular>
+          </View>
+        </Pressable>
+        <Pressable
+          onPress={() => setCancelEditOrder(true)}
+          style={({ pressed }) => [
+            {
+              backgroundColor: pressed
+                ? GlobalStyles.brandRedTap
+                : GlobalStyles.brandRed
+            },
+            styles.button
+          ]}>
+          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+            <AntDesign name='back' color='white' size={20} />
             <TextRegular textStyle={styles.text}>
-              Confirm order
+              Cancel edit and go back
             </TextRegular>
           </View>
-          </Pressable>
-          <Pressable
-            onPress={() => setDismissOrder(true)}
-            style={({ pressed }) => [
-              {
-                backgroundColor: pressed
-                  ? GlobalStyles.brandRedTap
-                  : GlobalStyles.brandRed
-              },
-              styles.button
-            ]}>
-            <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
-              <MaterialCommunityIcons name='minus-circle' color={'white'} size={20} />
-              <TextRegular textStyle={styles.text}>
-                Dismiss order
-              </TextRegular>
-            </View>
-          </Pressable>
+        </Pressable>
       </View>
     )
   }
@@ -221,22 +190,48 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     )
   }
 
-  const createOrder = async (values) => {
+  const fetchAll = async () => {
+    try {
+      const fetchedRestaurant = await getRestaurantDetail(route.params.id)
+      const productos = fetchedRestaurant.products
+      const fetchedOrder = await getOrderDetail(route.params.orderId)
+      setAddress(fetchedOrder.address)
+      setOriginalOrder(fetchedOrder)
+      setRestaurant(fetchedRestaurant)
+      setProducts(productos)
+      fetchedRestaurant.products.forEach(element => {
+        setProductQuantity(productQuantity.set(element.id, 0))
+      })
+      fetchedOrder.products.forEach(p => {
+        setProductQuantity(productQuantity.set(p.id, p.OrderProducts.quantity))
+      })
+    } catch (error) {
+      showMessage({
+        message: `There was an error while retrieving details. ${error}`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+
+  const updateOrder = async (values) => {
     setBackendErrors([])
     try {
       values.address = address
-      await create(values)
+      await update(route.params.orderId, values)
       showMessage({
-        message: 'Order succesfully created',
+        message: 'Order succesfully updated',
         type: 'success',
         style: GlobalStyles.flashStyle,
         titleStyle: GlobalStyles.flashTextStyle
       })
-      navigation.navigate('My Orders', { dirty: true })
+      navigation.navigate('OrdersScreen', { dirty: false })
     } catch (error) {
+      console.log(error)
       setBackendErrors(error.errors)
       showMessage({
-        message: `Problems while creating a new order: ${backendErrors}`,
+        message: `Problems while updating the order: ${backendErrors}`,
         type: 'danger',
         style: GlobalStyles.flashStyle,
         titleStyle: GlobalStyles.flashTextStyle
@@ -253,24 +248,23 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
         isVisible={orderToBeConfirmed !== null}
         onCancel={() => setOrderToBeConfirmed(null)}
         onConfirm={() => {
-          createOrder(orderToBeConfirmed)
+          updateOrder(orderToBeConfirmed)
           setOrderToBeConfirmed(null)
         }}
         addr={address}
-        setAddr={setAddress}>
+        setAddr={setAddress}
+        >
+
       </ConfirmOrderModal>
-      <DismissOrderModal
-        isVisible={dismissOrder === true}
-        onCancel={() => setDismissOrder(false)}
+      <CancelEditModal
+        isVisible={cancelEditOrder === true}
+        onCancel={() => setCancelEditOrder(false)}
         onConfirm={() => {
-          restaurant.products.forEach(element => {
-            setProductQuantity(productQuantity.set(element.id, 0))
-          })
-          setProducts([...products])
-          setDismissOrder(false)
+          setCancelEditOrder(false)
+          navigation.navigate('OrdersScreen', { dirty: false })
         }
         }>
-      </DismissOrderModal>
+      </CancelEditModal>
       <FlatList
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmptyProductsList}
@@ -337,19 +331,19 @@ const styles = StyleSheet.create({
   },
   availability: {
     textAlign: 'center',
-    fintSize: 20,
-    fintStyle: 'Arial',
+    fontSize: 20,
+    fontStyle: 'italic',
     marginRight: 70,
-    color: GlobalStyles.brandSecondary
+    color: 'red'
   },
   actionButton: {
     borderRadius: 8,
     height: 40,
-    marginTop: 12,
+    marginTop: 5,
     padding: 10,
-    alignSelf: 'center',
-    flexDirection: 'column',
-    width: '50%',
+    alignSelf: 'end',
+    flexDirection: 'row',
+    width: '4%',
     margin: '1%'
   },
   actionButtonsContainer: {
