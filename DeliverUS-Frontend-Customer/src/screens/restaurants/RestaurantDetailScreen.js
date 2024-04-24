@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useState } from 'react'
-import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { StyleSheet, View, FlatList, ImageBackground, Image } from 'react-native'
 import { showMessage } from 'react-native-flash-message'
 import { getDetail } from '../../api/RestaurantEndpoints'
 import ImageCard from '../../components/ImageCard'
@@ -8,76 +8,25 @@ import TextRegular from '../../components/TextRegular'
 import TextSemiBold from '../../components/TextSemibold'
 import * as GlobalStyles from '../../styles/GlobalStyles'
 import defaultProductImage from '../../../assets/product.jpeg'
-import { AuthorizationContext } from '../../context/AuthorizationContext'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { create } from '../../api/OrderEndpoints'
-import ConfirmOrderModal from '../../components/ConfirmOrderModal'
-import DismissOrderModal from '../../components/DismissOrderModal'
 
 export default function RestaurantDetailScreen ({ navigation, route }) {
-  const { loggedInUser } = useContext(AuthorizationContext)
   const [restaurant, setRestaurant] = useState({})
-  const [backendErrors, setBackendErrors] = useState()
-  const [products, setProducts] = useState([])
-  const [productQuantity, setProductQuantity] = useState(new Map())
-  const [orderToBeConfirmed, setOrderToBeConfirmed] = useState(null)
-  const [productsInOrder, setProducstInOrder] = useState([])
-  const [dismissOrder, setDismissOrder] = useState(false)
-  const [address, setAddress] = useState('')
 
   useEffect(() => {
-    fetchRestaurantProductDetail()
-  }, [loggedInUser, route])
-
-  const fetchRestaurantProductDetail = async () => {
-    try {
-      const fetchedRestaurant = await getDetail(route.params.id)
-      const productos = fetchedRestaurant.products
-      setRestaurant(fetchedRestaurant)
-      setProducts(productos)
-    } catch (error) {
-      showMessage({
-        message: `There was an error while retrieving restaurant details (id ${route.params.id}). ${error}`,
-        type: 'error',
-        style: GlobalStyles.flashStyle,
-        titleStyle: GlobalStyles.flashTextStyle
-      })
-    }
-  }
-
-  useEffect(() => {
-    // eslint-disable-next-line no-prototype-builtins
-    if (restaurant.hasOwnProperty('products')) {
-      restaurant.products.forEach(element => {
-        setProductQuantity(productQuantity.set(element.id, 0))
-      })
-    }
-  }, [restaurant])
-
-  useEffect(() => {
-    const productsNewOrder = products.filter(p => productQuantity.get(p.id) > 0)
-    setProducstInOrder(productsNewOrder)
-  }, [orderToBeConfirmed])
-
-  const confirmOrder = async () => {
-    const productQuantityReshaped = [...productQuantity].map(([productId, quantity]) => ({ productId, quantity }))
-      .filter(element => element.quantity > 0)
-    if (productQuantityReshaped.length > 0) {
-      const values = { address, restaurantId: route.params.id, products: productQuantityReshaped }
-      await setOrderToBeConfirmed(values)
-    } else {
-      showMessage({
-        message: 'Select at least one product to confirm an order',
-        type: 'danger',
-        style: GlobalStyles.flashStyle,
-        titleStyle: GlobalStyles.flashTextStyle
-      })
-    }
-  }
+    fetchRestaurantDetail()
+  }, [route])
 
   const renderHeader = () => {
     return (
       <View>
+        <View style={styles.FRHeader}>
+          <TextSemiBold>FR2: Restaurants details and menu.</TextSemiBold>
+          <TextRegular>Customers will be able to query restaurants details and the products offered by them.</TextRegular>
+          <TextSemiBold>FR3: Add, edit and remove products to a new order.</TextSemiBold>
+          <TextRegular>A customer can add several products, and several units of a product to a new order. Before confirming, customer can edit and remove products. Once the order is confirmed, it cannot be edited or removed.</TextRegular>
+          <TextSemiBold>FR4: Confirm or dismiss new order.</TextSemiBold>
+          <TextRegular>Customers will be able to confirm or dismiss the order before sending it to the backend.</TextRegular>
+        </View>
         <ImageBackground source={(restaurant?.heroImage) ? { uri: process.env.API_BASE_URL + '/' + restaurant.heroImage, cache: 'force-cache' } : undefined} style={styles.imageBackground}>
           <View style={styles.restaurantHeaderContainer}>
             <TextSemiBold textStyle={styles.textTitle}>{restaurant.name}</TextSemiBold>
@@ -86,54 +35,6 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
             <TextRegular textStyle={styles.description}>{restaurant.restaurantCategory ? restaurant.restaurantCategory.name : ''}</TextRegular>
           </View>
         </ImageBackground>
-
-        <Pressable
-          onPress={ () => {
-            if (loggedInUser) {
-              setAddress(loggedInUser.address)
-              confirmOrder()
-            } else {
-              showMessage({
-                message: 'You must be logged in to place an order',
-                type: 'danger',
-                style: GlobalStyles.flashStyle,
-                titleStyle: GlobalStyles.flashTextStyle
-              })
-              navigation.navigate('Profile')
-            }
-          }}
-          style={({ pressed }) => [
-            {
-              backgroundColor: pressed
-                ? GlobalStyles.brandGreenTap
-                : GlobalStyles.brandGreen
-            },
-            styles.button
-          ]}>
-          <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
-            <MaterialCommunityIcons name='plus-circle' color={'white'} size={20} />
-            <TextRegular textStyle={styles.text}>
-              Confirm order
-            </TextRegular>
-          </View>
-          </Pressable>
-          <Pressable
-            onPress={() => setDismissOrder(true)}
-            style={({ pressed }) => [
-              {
-                backgroundColor: pressed
-                  ? GlobalStyles.brandRedTap
-                  : GlobalStyles.brandRed
-              },
-              styles.button
-            ]}>
-            <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
-              <MaterialCommunityIcons name='minus-circle' color={'white'} size={20} />
-              <TextRegular textStyle={styles.text}>
-                Dismiss order
-              </TextRegular>
-            </View>
-          </Pressable>
       </View>
     )
   }
@@ -146,6 +47,7 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
       >
         <TextRegular numberOfLines={2}>{item.description}</TextRegular>
         <TextSemiBold textStyle={styles.price}>{item.price.toFixed(2)}€</TextSemiBold>
+<<<<<<< HEAD
         {item.availability &&
             <View style={styles.actionButtonsContainer}>
               <Pressable
@@ -195,10 +97,10 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
               </Pressable>
             </View>
         }
+=======
+>>>>>>> 57ad2bd4741f3f98f0fb0093ca9803edd0d6df9e
         {!item.availability &&
-          <View style={styles.actionButtonsContainer}>
-            <TextRegular textStyle={styles.availability}numberOfLines={6}>Not available</TextRegular>
-          </View>
+          <TextRegular textStyle={styles.availability }>Not available</TextRegular>
         }
       </ImageCard>
     )
@@ -212,23 +114,14 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     )
   }
 
-  const createOrder = async (values) => {
-    setBackendErrors([])
+  const fetchRestaurantDetail = async () => {
     try {
-      values.address = address
-      await create(values)
-      showMessage({
-        message: 'Order succesfully created',
-        type: 'success',
-        style: GlobalStyles.flashStyle,
-        titleStyle: GlobalStyles.flashTextStyle
-      })
-      navigation.navigate('My Orders', { dirty: true })
+      const fetchedRestaurant = await getDetail(route.params.id)
+      setRestaurant(fetchedRestaurant)
     } catch (error) {
-      setBackendErrors(error.errors)
       showMessage({
-        message: `Problems while creating a new order: ${backendErrors}`,
-        type: 'danger',
+        message: `There was an error while retrieving restaurant details (id ${route.params.id}). ${error}`,
+        type: 'error',
         style: GlobalStyles.flashStyle,
         titleStyle: GlobalStyles.flashTextStyle
       })
@@ -236,45 +129,23 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
   }
 
   return (
-    <>
-      <ConfirmOrderModal
-        shippingCosts={restaurant.shippingCosts}
-        data={productsInOrder}
-        quantities={productQuantity}
-        isVisible={orderToBeConfirmed !== null}
-        onCancel={() => setOrderToBeConfirmed(null)}
-        onConfirm={() => {
-          createOrder(orderToBeConfirmed)
-          setOrderToBeConfirmed(null)
-        }}
-        addr={address}
-        setAddr={setAddress}>
-      </ConfirmOrderModal>
-      <DismissOrderModal
-        isVisible={dismissOrder === true}
-        onCancel={() => setDismissOrder(false)}
-        onConfirm={() => {
-          restaurant.products.forEach(element => {
-            setProductQuantity(productQuantity.set(element.id, 0))
-          })
-          setProducts([...products])
-          setDismissOrder(false)
-        }
-        }>
-      </DismissOrderModal>
       <FlatList
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmptyProductsList}
           style={styles.container}
-          data={products}
+          data={restaurant.products}
           renderItem={renderProduct}
           keyExtractor={item => item.id.toString()}
         />
-    </>
   )
 }
 
 const styles = StyleSheet.create({
+  FRHeader: { // TODO: remove this style and the related <View>. Only for clarification purposes
+    justifyContent: 'center',
+    alignItems: 'left',
+    margin: 50
+  },
   container: {
     flex: 1
   },
@@ -327,16 +198,15 @@ const styles = StyleSheet.create({
     marginLeft: 5
   },
   availability: {
-    textAlign: 'center',
-    fintSize: 20,
-    fintStyle: 'Arial',
-    marginRight: 70,
+    textAlign: 'right',
+    marginRight: 5,
     color: GlobalStyles.brandSecondary
   },
   actionButton: {
     borderRadius: 8,
     height: 40,
     marginTop: 12,
+    margin: '1%',
     padding: 10,
     alignSelf: 'center',
     flexDirection: 'column',
@@ -345,21 +215,8 @@ const styles = StyleSheet.create({
   },
   actionButtonsContainer: {
     flexDirection: 'row',
+    bottom: 5,
     position: 'absolute',
-    width: '90%',
-    alignSelf: 'center',
-    marginTop: 30,
-    justifyContent: 'flex-end'
-  },
-  quantityBorder: {
-    border: 'solid',
-    marginTop: 5,
-    borderRadius: 8,
-    height: 40,
-    padding: 10,
-    width: '4%',
-    margin: '1%',
-    justifyContent: 'space-around',
-    alignSelf: 'center'
+    width: '90%'
   }
 })
