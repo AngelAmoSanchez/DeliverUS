@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState, useContext } from 'react'
 import { AuthorizationContext } from '../../context/AuthorizationContext'
-import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable, TextInput } from 'react-native'
+import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'react-native'
 import { showMessage } from 'react-native-flash-message'
 import { getRestaurantDetail } from '../../api/RestaurantEndpoints'
 import { update, getOrderDetail } from '../../api/OrderEndpoints'
@@ -72,7 +72,7 @@ export default function EditOrderScreen ({ navigation, route }) {
               confirmOrder()
             } else {
               showMessage({
-                message: 'If you want to place an order you must be logged in',
+                message: 'You must be logged in to place an order ',
                 type: 'danger',
                 style: GlobalStyles.flashStyle,
                 titleStyle: GlobalStyles.flashTextStyle
