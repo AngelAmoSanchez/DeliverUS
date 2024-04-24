@@ -75,18 +75,9 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
     }
   }
 
-  // Quitar el texto de las FR
   const renderHeader = () => {
     return (
       <View>
-        <View style={styles.FRHeader}>
-          <TextSemiBold>FR2: Restaurants details and menu.</TextSemiBold>
-          <TextRegular>Customers will be able to query restaurants details and the products offered by them.</TextRegular>
-          <TextSemiBold>FR3: Add, edit and remove products to a new order.</TextSemiBold>
-          <TextRegular>A customer can add several products, and several units of a product to a new order. Before confirming, customer can edit and remove products. Once the order is confirmed, it cannot be edited or removed.</TextRegular>
-          <TextSemiBold>FR4: Confirm or dismiss new order.</TextSemiBold>
-          <TextRegular>Customers will be able to confirm or dismiss the order before sending it to the backend.</TextRegular>
-        </View>
         <ImageBackground source={(restaurant?.heroImage) ? { uri: process.env.API_BASE_URL + '/' + restaurant.heroImage, cache: 'force-cache' } : undefined} style={styles.imageBackground}>
           <View style={styles.restaurantHeaderContainer}>
             <TextSemiBold textStyle={styles.textTitle}>{restaurant.name}</TextSemiBold>
