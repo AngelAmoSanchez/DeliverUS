@@ -160,8 +160,8 @@ export default function RestaurantDetailScreen ({ navigation, route }) {
                 style={({ pressed }) => [
                   {
                     backgroundColor: pressed
-                      ? GlobalStyles.brandRedTap
-                      : GlobalStyles.brandRed
+                      ? GlobalStyles.brandGreenTap
+                      : GlobalStyles.brandGreen
                   },
                   styles.actionButton
                 ]}>
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignSelf: 'center',
     flexDirection: 'column',
-    width: '50%',
+    width: '25%',
     margin: '1%'
   },
   actionButtonsContainer: {
