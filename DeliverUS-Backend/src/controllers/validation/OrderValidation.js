@@ -1,7 +1,6 @@
 import { check } from 'express-validator'
 import { Product, Restaurant, Order } from '../../models/models.js'
 
-// We check if the restaurant exists (CREATE)
 // 1. Check that restaurantId is present in the body and corresponds to an existing restaurant
 const checkRestaurantExists = async (value, { req }) => {
   try {
@@ -16,44 +15,6 @@ const checkRestaurantExists = async (value, { req }) => {
   }
 }
 
-// We check if it's pending (UPDATE)
-// 5. Check that the order is in the 'pending' state.
-const checkIfPending = async (value, { req }) => {
-  try {
-    const order = await Order.findByPk(req.params.orderId) // We get the Order with the id
-    if (order.status === 'pending') { // We check if it's in pending state
-      return Promise.resolve()
-    } else {
-      return Promise.reject(new Error('Order is not in pending state'))
-    }
-  } catch (error) {
-    return Promise.reject(new Error(error))
-  }
-}
-
-// 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited. (UPDATE)
-const checkOriginalRestaurant = async (value, { req }) => {
-  try {
-    const order = await Order.findByPk(req.params.orderId) // We get the order
-    const products = req.body.products
-    const productsIds = products.map(product => product.productId)
-    const productsDb = await Product.findAll({
-      where: {
-        id: productsIds
-      },
-      attributes: ['restaurantId']
-    }) // We get the products with the same Id
-    if (productsDb.some(x => x.restaurantId !== order.restaurantId)) { // We check differences in restaurantId from the request
-      return Promise.reject(new Error('Products do not belong to the same restaurant as before'))
-    } else {
-      return Promise.resolve()
-    }
-  } catch (error) {
-    return Promise.reject(new Error(error))
-  }
-}
-
-// We check every product is available (CREATE & UPDATE)
 // 3. Check that products are available
 const checkAvailabilityOfP = async (value, { req }) => {
   try {
@@ -76,24 +37,59 @@ const checkAvailabilityOfP = async (value, { req }) => {
   }
 }
 
-// We check that every product belongs to the same restaurant (CREATE)
 // 4. Check that all the products belong to the same restaurant
 const checkAllPSameRestaurant = async (value, { req }) => {
   try {
-    const orderRestaurantId = parseInt(req.body.restaurantId) // Get the id of the restaurant
+    const orderRestaurantId = parseInt(req.body.restaurantId)
     const products = await Product.findAll({
       where: {
         id: req.body.products.map(x => x.productId)
       },
       attributes: ['restaurantId']
-    }) // Get all the products from that restaurant
-    if (products.some(x => x.restaurantId !== orderRestaurantId)) { // We check that every product has the same restaurantId
+    })
+    if (products.some(x => x.restaurantId !== orderRestaurantId)) {
       return Promise.reject(new Error('Products do not belong to the same restaurant'))
     } else {
       return Promise.resolve()
     }
   } catch (err) {
     return Promise.reject(new Error(err))
+  }
+}
+
+// 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited. (UPDATE)
+const checkOriginalRestaurant = async (value, { req }) => {
+  try {
+    const order = await Order.findByPk(req.params.orderId)
+    const products = req.body.products
+    const productsIds = products.map(product => product.productId)
+    const productsDb = await Product.findAll({
+      where: {
+        id: productsIds
+      },
+      attributes: ['restaurantId']
+    })
+    if (productsDb.some(x => x.restaurantId !== order.restaurantId)) {
+      return Promise.reject(new Error('Products do not belong to the same restaurant as before'))
+    } else {
+      return Promise.resolve()
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
+  }
+}
+
+// 5. Check that the order is in the 'pending' state.
+const checkIfPending = async (value, { req }) => {
+  try {
+    const order = await Order.findByPk(req.params.orderId)
+    if (order.status === 'pending') {
+      return Promise.resolve()
+    } else {
+      return Promise.reject(new Error('Order is not in pending state'))
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
   }
 }
 
@@ -114,7 +110,7 @@ const create = [
   check('products').custom(checkAllPSameRestaurant) // 4. Check that all the products belong to the same restaurant
 ]
 
-// TODO: Include validation rules for update that should:
+// DONE: Include validation rules for update that should:
 // 1. Check that restaurantId is NOT present in the body.
 // 2. Check that products is a non-empty array composed of objects with productId and quantity greater than 0
 // 3. Check that products are available

@@ -83,10 +83,9 @@ const indexRestaurant = async function (req, res) {
     res.status(500).send(err)
   }
 }
-// SERGIO// Sergio
-// TODO: Implement the indexCustomer function that queries orders from current logged-in customer and send them back.
-// Orders have to include products that belongs to each order and restaurant details
-// sort them by createdAt date, desc.
+
+// DONE: Implement the indexCustomer function that queries orders from current logged-in customer and send them back.
+// Orders have to include products that belongs to each order and restaurant details sort them by createdAt date, desc.
 const indexCustomer = async function (req, res) {
   try {
     const orders = await Order.findAll({
@@ -104,7 +103,7 @@ const indexCustomer = async function (req, res) {
   }
 }
 
-// TODO: Implement the create function that receives a new order and stores it in the database.
+// DONE: Implement the create function that receives a new order and stores it in the database.
 // Take into account that:
 // 1. If price is greater than 10€, shipping costs have to be 0.
 // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
@@ -112,45 +111,48 @@ const indexCustomer = async function (req, res) {
 // 4. If an exception is raised, catch it and rollback the transaction
 
 const create = async function (req, res) {
-  // Use sequelizeSession to start a transaction
-  const tr = await sequelizeSession.transaction() // we start the transaction
+  const tr = await sequelizeSession.transaction()
   try {
-    let pedidoCreado = Order.build(req.body) // we create the order from the data
-    let precio = 0 // let price for the new order
-    for (const pr of req.body.products) { // we iterate through the for loop
-      const datoProducto = await Product.findByPk(pr.productId) // we get the product from its id
-      precio += pr.quantity * datoProducto.price // we add to the price quantity * price for each product
+    // 1. If price is greater than 10€, shipping costs have to be 0.
+    // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
+    let pedidoCreado = Order.build(req.body)
+    let precio = 0
+    for (const pr of req.body.products) {
+      const datoProducto = await Product.findByPk(pr.productId)
+      precio += pr.quantity * datoProducto.price
     }
     let shippingCosts = 0
-    if (precio > 10) { // If price is greater than 10€, shipping costs have to be 0.
+    if (precio > 10) {
       shippingCosts = 0
-    } else { // If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs
+    } else {
       const restaurant = await Restaurant.findByPk(req.body.restaurantId)
       shippingCosts = restaurant.shippingCosts
     }
 
-    const finalPrice = precio + shippingCosts //  and have to be added to the order total price
+    const finalPrice = precio + shippingCosts
 
     pedidoCreado.createdAt = new Date()
     pedidoCreado.userId = req.user.id
     pedidoCreado.price = finalPrice
     pedidoCreado.shippingCosts = shippingCosts
-    // we stablish new params for the order
     pedidoCreado = await pedidoCreado.save({ tr })
-    for (const pr of req.body.products) { // 3. In order to save the order and related products, start a transaction, store the order, store each product linea and commit the transaction
+
+    // 3. In order to save the order and related products, start a transaction, store the order, store each product linea and commit the transaction
+    for (const pr of req.body.products) {
       const databaseProducto = await Product.findByPk(pr.productId)
       await pedidoCreado.addProduct(databaseProducto, { through: { quantity: pr.quantity, unityPrice: databaseProducto.price }, tr })
     }
     await tr.commit()
     const pedidoFinal = await Order.findByPk(pedidoCreado.id, { include: [{ model: Product, as: 'products' }] })
-    res.json(pedidoFinal) // we return the created order
-  } catch (error) { // 4. If an exception is raised, catch it and rollback the transaction
+    res.json(pedidoFinal)
+  } catch (error) {
+    // 4. If an exception is raised, catch it and rollback the transaction
     await tr.rollback()
     res.status(500).send('An error has occurred!')
   }
 }
 
-// TODO: Implement the update function that receives a modified order and persists it in the database.
+// DONE: Implement the update function that receives a modified order and persists it in the database.
 // Take into account that:
 // 1. If price is greater than 10€, shipping costs have to be 0.
 // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
@@ -164,12 +166,16 @@ const update = async function (req, res) {
       const productoData = await Product.findByPk(producto.productId)
       precioN += producto.quantity * productoData.price // We get the new price
     }
-    let shippingCostsN = 0 // 1. If price is greater than 10€, shipping costs have to be 0.
+
+    // 1. If price is greater than 10€, shipping costs have to be 0.
+    // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
+    let shippingCostsN = 0
     const order = await Order.findByPk(req.params.orderId)
-    if (precioN <= 10) { // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
+    if (precioN <= 10) {
       const restaurant = await Restaurant.findByPk(order.restaurantId)
       shippingCostsN = restaurant.shippingCosts
-    } // 3. In order to save the updated order and updated products, start a transaction, update the order, remove the old related OrderProducts and store the new product lines, and commit the transaction
+    }
+    // 3. In order to save the updated order and updated products, start a transaction, update the order, remove the old related OrderProducts and store the new product lines, and commit the transaction
     await order.setProducts([])
     for (const producto of req.body.products) {
       const productoData = await Product.findByPk(producto.productId)
@@ -181,13 +187,14 @@ const update = async function (req, res) {
     await tr.commit()
     const uOrder = await Order.findByPk(req.params.orderId, { include: [{ model: Product, as: 'products' }] })
     res.json(uOrder)
-  } catch (e) { // 4. If an exception is raised, catch it and rollback the transaction
+  } catch (e) {
+    // 4. If an exception is raised, catch it and rollback the transaction
     await tr.rollback()
     res.status(500).send(e)
   }
 }
 
-// TODO: Implement the destroy function that receives an orderId as path param and removes the associated order from the database.
+// DONE: Implement the destroy function that receives an orderId as path param and removes the associated order from the database.
 // Take into account that:
 // 1. The migration include the "ON DELETE CASCADE" directive so OrderProducts related to this order will be automatically removed.
 const destroy = async function (req, res) {
@@ -199,7 +206,6 @@ const destroy = async function (req, res) {
     }
     res.json(message)
   } catch (error) {
-    //    Console.error(error)
     res.status(500).send('Error initializing the requests')
   }
 }
