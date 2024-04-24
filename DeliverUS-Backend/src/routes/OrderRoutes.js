@@ -1,4 +1,4 @@
-import * as OrderValidation from '../controllers/validation/ProductValidation.js'
+import * as OrderValidation from '../controllers/validation/OrderValidation.js'
 import OrderController from '../controllers/OrderController.js'
 import { hasRole, isLoggedIn } from '../middlewares/AuthMiddleware.js'
 import { checkEntityExists } from '../middlewares/EntityMiddleware.js'
@@ -11,20 +11,20 @@ const loadFileRoutes = function (app) {
   // 1. Retrieving orders from current logged-in customer
   app.route('/orders')
     .get(
-      isLoggedIn,
-      hasRole('customer'),
-      OrderController.indexCustomer)
-
+      isLoggedIn, // we check it's logged-in
+      hasRole('customer'), // we check it has role customer
+      OrderController.indexCustomer // function that queries orders from current logged-in customer and send them back
+    )
   // 2. Creating a new order (only customers can create new orders)
   app.route('/orders')
     .post(
-      isLoggedIn,
-      hasRole('customer'),
-      OrderMiddleware.checkRestaurantExists,
-      OrderValidation.create,
-      handleValidation,
-      OrderController.create)
-
+      isLoggedIn, // we check it's logged-in
+      hasRole('customer'), // we check it has role customer
+      OrderMiddleware.checkRestaurantExists, // we check if the restaurant of the order exists
+      OrderValidation.create, // we validate data to create the order
+      handleValidation, // we send errors
+      OrderController.create // we create if everything goes well
+    )
   app.route('/orders/:orderId/confirm')
     .patch(
       isLoggedIn,
@@ -32,7 +32,8 @@ const loadFileRoutes = function (app) {
       checkEntityExists(Order, 'orderId'),
       OrderMiddleware.checkOrderOwnership,
       OrderMiddleware.checkOrderIsPending,
-      OrderController.confirm)
+      OrderController.confirm
+    )
 
   app.route('/orders/:orderId/send')
     .patch(
@@ -41,8 +42,8 @@ const loadFileRoutes = function (app) {
       checkEntityExists(Order, 'orderId'),
       OrderMiddleware.checkOrderOwnership,
       OrderMiddleware.checkOrderCanBeSent,
-      OrderController.send)
-
+      OrderController.send
+    )
   app.route('/orders/:orderId/deliver')
     .patch(
       isLoggedIn,
@@ -55,29 +56,29 @@ const loadFileRoutes = function (app) {
   // TODO: Include routes for:
   // 3. Editing order (only customers can edit their own orders)
   app.route('/orders/:orderId')
-    .patch(
-      isLoggedIn,
-      hasRole('customer'),
-      checkEntityExists(Order, 'orderId'),
-      OrderMiddleware.checkOrderCustomer,
-      OrderValidation.update,
-      handleValidation,
-      OrderController.update)
-
+    .put(
+      isLoggedIn, // we check it's logged-in
+      hasRole('customer'), // we check it has role customer
+      checkEntityExists(Order, 'orderId'), // we check that order with that ID exists
+      OrderMiddleware.checkOrderCustomer, // we check if the order belongs to current loggedIn customer
+      OrderMiddleware.checkOrderIsPending, // we check the order is still pending
+      OrderValidation.update, // we validate data to update the order
+      handleValidation, // we send back errors
+      OrderController.update) // we update the order if everything goes well
   // 4. Remove order (only customers can remove their own orders)
   app.route('/orders/:orderId')
     .delete(
-      isLoggedIn,
-      hasRole('customer'),
-      checkEntityExists(Order, 'orderId'),
-      // OrderMiddleware.checkOrderOwnership,
-      OrderMiddleware.checkOrderCustomer,
-      OrderController.destroy) // Miarar si hay delete en los controllers que han hecho
+      isLoggedIn, // we check if it's logged-in
+      hasRole('customer'), // we check it has role customer
+      checkEntityExists(Order, 'orderId'), // we check that order with that ID exists
+      OrderMiddleware.checkOrderCustomer, // we check if the order belongs to current loggedIn customer
+      OrderMiddleware.checkOrderIsPending, // we check the order is still pending
+      handleValidation, // we send back errors
+      OrderController.destroy)
 
   app.route('/orders/:orderId')
     .get(
       isLoggedIn,
-      hasRole('customer'),
       checkEntityExists(Order, 'orderId'),
       OrderMiddleware.checkOrderVisible,
       OrderController.show)

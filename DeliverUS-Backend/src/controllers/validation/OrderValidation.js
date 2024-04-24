@@ -1,63 +1,135 @@
 import { check } from 'express-validator'
-import { checkOrderIsPending, checkRestaurantExists } from '../../middlewares/OrderMiddleware'
-import { Order, Product, Restaurant } from '../../models/models'
+import { Product, Restaurant, Order } from '../../models/models.js'
+
+// We check if the restaurant exists (CREATE)
+// 1. Check that restaurantId is present in the body and corresponds to an existing restaurant
+const checkRestaurantExists = async (value, { req }) => {
+  try {
+    const restaurant = await Restaurant.findByPk(req.body.restaurantId)
+    if (restaurant !== null) {
+      return Promise.resolve()
+    } else {
+      return Promise.reject(new Error('Resturant does not exists'))
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
+  }
+}
+
+// We check if it's pending (UPDATE)
+// 5. Check that the order is in the 'pending' state.
+const checkIfPending = async (value, { req }) => {
+  try {
+    const order = await Order.findByPk(req.params.orderId) // We get the Order with the id
+    if (order.status === 'pending') { // We check if it's in pending state
+      return Promise.resolve()
+    } else {
+      return Promise.reject(new Error('Order is not in pending state'))
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
+  }
+}
+
+// 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited. (UPDATE)
+const checkOriginalRestaurant = async (value, { req }) => {
+  try {
+    const order = await Order.findByPk(req.params.orderId) // We get the order
+    const products = req.body.products
+    const productsIds = products.map(product => product.productId)
+    const productsDb = await Product.findAll({
+      where: {
+        id: productsIds
+      },
+      attributes: ['restaurantId']
+    }) // We get the products with the same Id
+    if (productsDb.some(x => x.restaurantId !== order.restaurantId)) { // We check differences in restaurantId from the request
+      return Promise.reject(new Error('Products do not belong to the same restaurant as before'))
+    } else {
+      return Promise.resolve()
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
+  }
+}
+
+// We check every product is available (CREATE & UPDATE)
+// 3. Check that products are available
+const checkAvailabilityOfP = async (value, { req }) => {
+  try {
+    const products = req.body.products
+    const productsIds = products.map(product => product.productId) // obtengo los ids de los productos
+    const productsInDb = await Product.findAll( // obtengo los productos que estén disponibles
+      {
+        where: {
+          id: productsIds,
+          availability: true
+        }
+      })
+    if (productsInDb.length !== req.body.products.length) { // si no son los mismos lanzo error
+      return Promise.reject(new Error('Some products are not available'))
+    } else {
+      return Promise.resolve()
+    }
+  } catch (error) {
+    return Promise.reject(new Error(error))
+  }
+}
+
+// We check that every product belongs to the same restaurant (CREATE)
+// 4. Check that all the products belong to the same restaurant
+const checkAllPSameRestaurant = async (value, { req }) => {
+  try {
+    const orderRestaurantId = parseInt(req.body.restaurantId) // Get the id of the restaurant
+    const products = await Product.findAll({
+      where: {
+        id: req.body.products.map(x => x.productId)
+      },
+      attributes: ['restaurantId']
+    }) // Get all the products from that restaurant
+    if (products.some(x => x.restaurantId !== orderRestaurantId)) { // We check that every product has the same restaurantId
+      return Promise.reject(new Error('Products do not belong to the same restaurant'))
+    } else {
+      return Promise.resolve()
+    }
+  } catch (err) {
+    return Promise.reject(new Error(err))
+  }
+}
 
 // TODO: Include validation rules for create that should:
 // 1. Check that restaurantId is present in the body and corresponds to an existing restaurant
 // 2. Check that products is a non-empty array composed of objects with productId and quantity greater than 0
 // 3. Check that products are available
 // 4. Check that all the products belong to the same restaurant
+
 const create = [
-  check('restaurantId')
-    .exists().withMessage('Field restauranteId should be present')
-    .custom(checkRestaurantExists),
-  check('products')
-    .isArray({ min: 1 }).withMessage('There must be at least one product in the order')
-    .custom(async (value, { req }) => {
-      for (const product of value) {
-        if (!product.productId || product.quantity <= 0) {
-          throw new Error('Each product must have productId and quantity greater than 0')
-        }
-        const productData = await Product.findByPk(product.productId)
-        if (!productData) {
-          throw new Error('One or more products are not available')
-        }
-        const restaurant = await Restaurant.findByPk(req.body.restaurantId)
-        if (productData.restaurantId !== restaurant.id) {
-          throw new Error('All products must belong to the same restaurant')
-        }
-      }
-    })
+  check('restaurantId').exists().isInt().toInt(), //  1. Check that restaurantId is present in the body
+  check('restaurantId').custom(checkRestaurantExists), // and corresponds to an existing restaurant
+  check('address').exists().isString(),
+  check('products').exists().isArray({ min: 1 }).toArray(), // 2. Check that products is a non-empty array composed of objects
+  check('products.*.quantity').isInt({ min: 1 }).toInt(), // with quantity
+  check('products.*.productId').exists().isInt().toInt(), // and productId greater than 0
+  check('products').custom(checkAvailabilityOfP), // 3. Check that products are available
+  check('products').custom(checkAllPSameRestaurant) // 4. Check that all the products belong to the same restaurant
 ]
+
 // TODO: Include validation rules for update that should:
 // 1. Check that restaurantId is NOT present in the body.
 // 2. Check that products is a non-empty array composed of objects with productId and quantity greater than 0
 // 3. Check that products are available
 // 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited.
 // 5. Check that the order is in the 'pending' state.
-const update = [
-  check('restaurantId')
-    .not().exists().withMessage('Field restaurantId should not be present'),
-  check('products')
-    .isArray({ min: 1 }).withMessage('There must be at least one product in the order')
-    .custom(async (value, req) => {
-      const order = await Order.findByPk(req.params.orderId)
-      for (const product of value) {
-        if (!product.productId || product.quantity <= 0) {
-          throw new Error('Each product must have productId and quantity greater than 0')
-        }
-        const productData = await Product.findByPk(product.productId)
-        if (!productData) {
-          throw new Error('One or more products are not available')
-        }
-        if (productData.restaurantId !== order.restaurantId) {
-          throw new Error('All products must belong to the same restaurant of the originally order')
-        }
-      }
-    }),
-  check('status')
-    .custom(checkOrderIsPending)
 
+const update = [
+  check('restaurantId').not().exists(), // 1. Check that restaurantId is NOT present in the body.
+  check('address').exists().isString(),
+  check('products').exists().isArray({ min: 1 }), // 2. Check that products is a non-empty array composed of objects
+  check('products.*.productId').exists().isInt({ min: 1 }).toInt(), // with productId
+  check('products.*.quantity').exists().isInt({ min: 1 }).toInt(), // and quantity greater than 0
+  check('products').exists().custom(checkAvailabilityOfP), // 3. Check that products are available
+  check('products').exists().custom(checkOriginalRestaurant), // 4. Check that all the products belong to the same restaurant of the originally saved order that is being edited.
+  check('orderId').exists().custom(checkIfPending) // 5. Check that the order is in the 'pending' state.
 ]
 
 export { create, update }

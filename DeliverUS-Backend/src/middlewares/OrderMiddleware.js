@@ -4,21 +4,23 @@ import { Order, Restaurant } from '../models/models.js'
 const checkOrderCustomer = async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.orderId)
-    if (req.user.id === order.userId) {
+    if (order.userId === req.user.id) {
       return next()
     } else {
-      return res.status(403).send('Not enough privileges. This entity does not belong to you')
+      return res.status(403).send('Not enough privileges')
     }
-  } catch (err) {
-    return res.status(500).send(err)
+  } catch (error) {
+    return res.status(500).send(error)
   }
 }
 
 // TODO: Implement the following function to check if the restaurant of the order exists
 const checkRestaurantExists = async (req, res, next) => {
   try {
-    const order = await Order.findByPk(req.params.orderId)
-    if (!order.restaurantId) { return res.status(404).send('Not found') }
+    const restaurant = await Restaurant.findByPk(req.body.restaurantId)
+    if (!restaurant) {
+      return res.status(409).send('Restaurant does not exist')
+    }
     return next()
   } catch (err) {
     return res.status(500).send(err)
