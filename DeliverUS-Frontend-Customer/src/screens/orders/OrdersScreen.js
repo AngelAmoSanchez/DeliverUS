@@ -3,17 +3,19 @@ import { StyleSheet, Pressable, View } from 'react-native'
 import TextRegular from '../../components/TextRegular'
 import TextSemiBold from '../../components/TextSemibold'
 import { AuthorizationContext } from '../../context/AuthorizationContext'
-import { getOrders } from '../../api/OrderEndpoints'
+import { getOrders, remove } from '../../api/OrderEndpoints'
 import { showMessage } from 'react-native-flash-message'
 import * as GlobalStyles from '../../styles/GlobalStyles'
 import ImageCard from '../../components/ImageCard'
 import restaurantLogo from '../../../assets/restaurantLogo.jpeg'
 import { FlatList } from 'react-native-web'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
+import DeleteModal from '../../components/DeleteModal'
 
 export default function OrdersScreen ({ navigation, route }) {
   const [orders, setOrders] = useState([])
   const { loggedInUser } = useContext(AuthorizationContext)
+  const [orderToBeDeleted, setOrderToBeDeleted] = useState(null)
 
   async function fetchOrders () {
     try {
@@ -38,6 +40,28 @@ export default function OrdersScreen ({ navigation, route }) {
     }
   }, [loggedInUser, route, orders])
 
+  const removeOrder = async (order) => {
+    try {
+      await remove(order.id)
+      await fetchOrders()
+      setOrderToBeDeleted(null)
+      showMessage({
+        message: `Order ${order.id} succesfully removed`,
+        type: 'success',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    } catch (error) {
+      setOrderToBeDeleted(null)
+      showMessage({
+        message: `Order ${order.id} could not be removed.`,
+        type: 'error',
+        style: GlobalStyles.flashStyle,
+        titleStyle: GlobalStyles.flashTextStyle
+      })
+    }
+  }
+
   const renderOrder = ({ item }) => {
     return (
       <ImageCard
@@ -52,7 +76,7 @@ export default function OrdersScreen ({ navigation, route }) {
         {item.status === 'pending' &&
         <View style={styles.actionButtonsContainer}>
           <Pressable
-           onPress={() => navigation.navigate('EditOrderScreen', { orderId: item.id, id: item.restaurant.id })}
+           onPress={() => { navigation.navigate('EditOrderScreen', { orderId: item.id, id: item.restaurant.id }) }}
             style={({ pressed }) => [
               {
                 backgroundColor: pressed
@@ -65,6 +89,24 @@ export default function OrdersScreen ({ navigation, route }) {
               <MaterialCommunityIcons name='pencil' color={'white'} size={20}/>
               <TextRegular textStyle={styles.text}>
                 Edit
+              </TextRegular>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => { setOrderToBeDeleted(item) }}
+            style={({ pressed }) => [
+              {
+                backgroundColor: pressed
+                  ? GlobalStyles.brandPrimaryTap
+                  : GlobalStyles.brandPrimary
+              },
+              styles.actionButton
+            ]}>
+            <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
+              <MaterialCommunityIcons name='delete' color={'white'} size={20}/>
+              <TextRegular textStyle={styles.text}>
+                Delete
               </TextRegular>
             </View>
           </Pressable>
@@ -120,6 +162,12 @@ export default function OrdersScreen ({ navigation, route }) {
           keyExtractor={item => item.id.toString()}
           ListEmptyComponent={renderEmptyOrdersList}
         />
+        <DeleteModal
+          isVisible={orderToBeDeleted !== null}
+          onCancel={() => setOrderToBeDeleted(null)}
+          onConfirm={() => removeOrder(orderToBeDeleted)}>
+          <TextRegular>The products of this order will be deleted as well</TextRegular>
+        </DeleteModal>
       </>
   )
 }

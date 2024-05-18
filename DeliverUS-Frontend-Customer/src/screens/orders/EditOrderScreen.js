@@ -23,8 +23,8 @@ export default function EditOrderScreen ({ navigation, route }) {
   const [orderToBeConfirmed, setOrderToBeConfirmed] = useState(null)
   const [productsInOrder, setProducstInOrder] = useState([])
   const [cancelEditOrder, setCancelEditOrder] = useState(false)
-  const [address, setAddress] = useState('')
   const [originalOrder, setOriginalOrder] = useState()
+  const [address, setAddress] = useState('')
 
   useEffect(() => {
     fetchAll()
