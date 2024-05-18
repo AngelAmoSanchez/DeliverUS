@@ -21,8 +21,8 @@ export default function DeleteModal (props) {
           style={({ pressed }) => [
             {
               backgroundColor: pressed
-                ? GlobalStyles.brandRedTap
-                : GlobalStyles.brandRed
+                ? GlobalStyles.brandBlue
+                : GlobalStyles.brandBlue
             },
             styles.actionButton
           ]}>
@@ -38,8 +38,8 @@ export default function DeleteModal (props) {
           style={({ pressed }) => [
             {
               backgroundColor: pressed
-                ? GlobalStyles.brandBlueTap
-                : GlobalStyles.brandBlue
+                ? GlobalStyles.brandPrimaryTap
+                : GlobalStyles.brandPrimary
             },
             styles.actionButton
           ]}>

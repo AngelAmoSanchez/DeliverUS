@@ -97,8 +97,8 @@ export default function ConfirmOrderModal (props) {
               style={({ pressed }) => [
                 {
                   backgroundColor: pressed
-                    ? GlobalStyles.brandGreenTap
-                    : GlobalStyles.brandGreen
+                    ? GlobalStyles.brandSuccessTap
+                    : GlobalStyles.brandSuccess
                 },
                 styles.actionButton
               ]}>
@@ -114,8 +114,8 @@ export default function ConfirmOrderModal (props) {
               style={({ pressed }) => [
                 {
                   backgroundColor: pressed
-                    ? GlobalStyles.brandRedTap
-                    : GlobalStyles.brandRed
+                    ? GlobalStyles.brandPrimary
+                    : GlobalStyles.brandPrimary
                 },
                 styles.actionButton
               ]}>
