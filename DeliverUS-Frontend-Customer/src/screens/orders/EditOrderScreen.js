@@ -1,9 +1,8 @@
-/* eslint-disable react/prop-types */
 import React, { useEffect, useState, useContext } from 'react'
 import { AuthorizationContext } from '../../context/AuthorizationContext'
 import { StyleSheet, View, FlatList, ImageBackground, Image, Pressable } from 'react-native'
 import { showMessage } from 'react-native-flash-message'
-import { getRestaurantDetail } from '../../api/RestaurantEndpoints'
+import { getDetail } from '../../api/RestaurantEndpoints'
 import { update, getOrderDetail } from '../../api/OrderEndpoints'
 import ImageCard from '../../components/ImageCard'
 import TextRegular from '../../components/TextRegular'
@@ -138,8 +137,8 @@ export default function EditOrderScreen ({ navigation, route }) {
                 style={({ pressed }) => [
                   {
                     backgroundColor: pressed
-                      ? GlobalStyles.brandRedTap
-                      : GlobalStyles.brandRed
+                      ? GlobalStyles.brandPrimaryTap
+                      : GlobalStyles.brandPrimary
                   },
                   styles.actionButton
                 ]}>
@@ -192,7 +191,7 @@ export default function EditOrderScreen ({ navigation, route }) {
 
   const fetchAll = async () => {
     try {
-      const fetchedRestaurant = await getRestaurantDetail(route.params.id)
+      const fetchedRestaurant = await getDetail(route.params.id)
       const productos = fetchedRestaurant.products
       const fetchedOrder = await getOrderDetail(route.params.orderId)
       setAddress(fetchedOrder.address)
