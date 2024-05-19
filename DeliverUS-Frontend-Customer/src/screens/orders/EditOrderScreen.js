@@ -40,7 +40,6 @@ export default function EditOrderScreen ({ navigation, route }) {
     if (productQuantityReshaped.length > 0) {
       const values = {
         address,
-        // restaurantId: route.params.id,
         products: productQuantityReshaped
       }
       await setOrderToBeConfirmed(values)

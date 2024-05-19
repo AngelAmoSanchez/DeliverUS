@@ -14,7 +14,7 @@ export default function DeleteModal (props) {
     onRequestClose={props.onCancel}>
     <View style={styles.centeredView}>
       <View style={styles.modalView}>
-        <TextSemiBold textStyle={{ fontSize: 15 }}>Are you sure you don't want to edit the order?</TextSemiBold>
+        <TextSemiBold textStyle={{ fontSize: 15 }}>Are you sure you don&apos;t want to edit the order?</TextSemiBold>
         {props.children}
         <Pressable
           onPress={props.onCancel}
@@ -46,7 +46,7 @@ export default function DeleteModal (props) {
       <View style={[{ flex: 1, flexDirection: 'row', justifyContent: 'center' }]}>
         <AntDesign name='back' color='white' size={20} />
         <TextRegular textStyle={styles.text}>
-          I'm sure. Go back
+          I&apos;m sure. Go back
         </TextRegular>
       </View>
     </Pressable>

@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, View, Image, FlatList } from 'react-native'
 import TextRegular from '../../components/TextRegular'
@@ -91,7 +90,7 @@ const styles = StyleSheet.create({
   restaurantHeaderContainer: {
     height: 250,
     padding: 10,
-    backgroundColor: 'rgba(170,14,46,255)', // 'rgba(0,0,0,0.5)' anterior 'rgb(242, 242, 242)' actual
+    backgroundColor: 'rgba(170,14,46,255)', // 'rgba(0,0,0,0.5)' anterior
     flexDirection: 'column',
     alignItems: 'center'
   },

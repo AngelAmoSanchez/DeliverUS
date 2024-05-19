@@ -1,8 +1,6 @@
-/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react'
 import { getAll2 } from '../../api/RestaurantEndpoints'
 import { get3MorePopularProducts } from '../../api/ProductEndpoints'
-// import { getAll, getAll2 } from '../../api/RestaurantEndpoints'
 import { StyleSheet, FlatList, Pressable, View } from 'react-native'
 import TextSemiBold from '../../components/TextSemibold'
 import TextRegular from '../../components/TextRegular'
@@ -11,26 +9,17 @@ import { showMessage } from 'react-native-flash-message'
 import restaurantLogo from '../../../assets/restaurantLogo.jpeg'
 import ImageCard from '../../components/ImageCard'
 import defaultProductImage from '../../../assets/product.jpeg'
-// import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 export default function RestaurantsScreen ({ navigation, route }) {
   const [restaurants, setRestaurants] = useState([])
   const [products, setProducts] = useState([])
-  // TODO: Create a state for storing the restaurants
-
-  // useEffect(() => {
-  // TODO: Fetch all restaurants and set them to state.
-  //      Notice that it is not required to be logged in.
-
-  // TODO: set restaurants to state
-  // }, [route])
 
   useEffect(() => {
-    async function fetchRestaurants () { // Addresses problem 1
+    async function fetchRestaurants () {
       try {
         const fetchedRestaurants = await getAll2()
         setRestaurants(fetchedRestaurants)
-      } catch (error) { // Addresses problem 3
+      } catch (error) {
         showMessage({
           message: `There was an error while retrieving restaurants. ${error} `,
           type: 'error',
@@ -134,31 +123,6 @@ export default function RestaurantsScreen ({ navigation, route }) {
       keyExtractor={r => r.id.toString()}
     />
   )
-/*  return (
-    <View style={styles.container}>
-      <View style={styles.FRHeader}>
-        <TextSemiBold>FR1: Restaurants listing.</TextSemiBold>
-        <TextRegular>List restaurants and enable customers to navigate to restaurant details so they can create and place a new order</TextRegular>
-        <TextSemiBold>FR7: Show top 3 products.</TextSemiBold>
-        <TextRegular>Customers will be able to query top 3 products from all restaurants. Top products are the most popular ones, in other words the best sellers.</TextRegular>
-      </View>
-      <Pressable
-        onPress={() => {
-          navigation.navigate('RestaurantDetailScreen', { id: 1 }) // TODO: Change this to the actual restaurant id as they are rendered as a FlatList
-        }}
-        style={({ pressed }) => [
-          {
-            backgroundColor: pressed
-              ? GlobalStyles.brandPrimaryTap
-              : GlobalStyles.brandPrimary
-          },
-          styles.button
-        ]}
-      >
-        <TextRegular textStyle={styles.text}>Go to Restaurant Detail Screen</TextRegular>
-      </Pressable>
-    </View>
-  ) */
 }
 
 const styles = StyleSheet.create({

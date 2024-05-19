@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ScrollView, Modal, FlatList, Pressable, StyleSheet, View, TextInput } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import TextSemiBold from './TextSemibold'
