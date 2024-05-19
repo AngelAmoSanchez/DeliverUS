@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars
 import { Order, Product, Restaurant, User, sequelizeSession } from '../models/models.js'
 import moment from 'moment'
 import { Op } from 'sequelize'
@@ -57,7 +56,7 @@ const generateFilterWhereClauses = function (req) {
     const date = moment(req.query.to, 'YYYY-MM-DD', true)
     filterWhereClauses.push({
       createdAt: {
-        [Op.lte]: date.add(1, 'days') // FIXME: se pasa al siguiente día a las 00:00
+        [Op.lte]: date.add(1, 'days')
       }
     })
   }
@@ -90,14 +89,14 @@ const indexCustomer = async function (req, res) {
   try {
     const orders = await Order.findAll({
       where: {
-        userId: req.user.id // we find all the orders from the user's id
+        userId: req.user.id
       },
-      include: [{ model: Product, as: 'products' }, { // we get the products
+      include: [{ model: Product, as: 'products' }, {
         model: Restaurant, as: 'restaurant'
-      }], // and restaurant's info
-      order: [['createdAt', 'DESC']] // we sort them by createdAt, desc
+      }],
+      order: [['createdAt', 'DESC']]
     })
-    res.json(orders) // we return orders
+    res.json(orders)
   } catch (err) {
     res.status(500).send('Error initializing the requests')
   }
@@ -111,7 +110,7 @@ const indexCustomer = async function (req, res) {
 // 4. If an exception is raised, catch it and rollback the transaction
 
 const create = async function (req, res) {
-  const tr = await sequelizeSession.transaction()
+  const tr = await sequelizeSession.transaction() // start the transaction
   try {
     // 1. If price is greater than 10€, shipping costs have to be 0.
     // 2. If price is less or equals to 10€, shipping costs have to be restaurant default shipping costs and have to be added to the order total price
@@ -159,12 +158,12 @@ const create = async function (req, res) {
 // 3. In order to save the updated order and updated products, start a transaction, update the order, remove the old related OrderProducts and store the new product lines, and commit the transaction
 // 4. If an exception is raised, catch it and rollback the transaction
 const update = async function (req, res) {
-  const tr = await sequelizeSession.transaction() // Use sequelizeSession to start a transaction
+  const tr = await sequelizeSession.transaction()
   try {
     let precioN = 0
     for (const producto of req.body.products) {
       const productoData = await Product.findByPk(producto.productId)
-      precioN += producto.quantity * productoData.price // We get the new price
+      precioN += producto.quantity * productoData.price
     }
 
     // 1. If price is greater than 10€, shipping costs have to be 0.
@@ -304,7 +303,7 @@ const analytics = async function (req, res) {
       {
         where:
         {
-          createdAt: { [Op.gte]: todayZeroHours }, // FIXME: Created or confirmed?
+          createdAt: { [Op.gte]: todayZeroHours },
           restaurantId: req.params.restaurantId
         }
       })
